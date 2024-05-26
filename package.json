@@ -7,7 +7,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npx tsc",
-    "devel": "set NODE_ENV=dev && nodemon --exec ts-node -r tsconfig-paths/register ./src/index.ts",
+    "devel": "NODE_ENV=dev nodemon --exec ts-node -r tsconfig-paths/register ./src/index.ts",
     "test": "mocha --timeout 30000 --exit -r ts-node/register -r tsconfig-paths/register src/test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "start": "npm run build && node ./dist/index.js",
@@ -21,10 +21,12 @@
     "src": "dist"
   },
   "dependencies": {
+    "axios": "^1.7.2",
     "chai-http": "4.3.0",
     "consul": "1.2.0",
     "express": "4.18.2",
     "http-status": "1.6.2",
+    "joi": "^17.13.1",
     "log4js": "6.9.1",
     "module-alias": "2.2.3",
     "mongoose": "7.0.4"

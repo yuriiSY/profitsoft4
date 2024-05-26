@@ -1,15 +1,16 @@
-import express from 'express';
-import routers from './routers';
-import config from './config';
-import log4js, { Configuration } from 'log4js';
-import mongoose, { ConnectOptions } from 'mongoose';
-import Consul, { ConsulOptions } from 'consul';
+import express, { Request, Response, NextFunction } from "express";
+import routers from "./routers";
+import config from "./config";
+import log4js, { Configuration } from "log4js";
+import mongoose, { ConnectOptions } from "mongoose";
+import Consul, { ConsulOptions } from "consul";
 
-type EnvType = 'dev' | 'prod';
+type EnvType = "dev" | "prod";
 
-let env: EnvType = 'prod';
-if (String(process.env.NODE_ENV).trim() === 'dev') {
-  env = 'dev';
+let env: EnvType = "prod";
+
+if (String(process.env.NODE_ENV).trim() === "dev") {
+  env = "dev";
 }
 
 const consulServer = new Consul(config.consul.server[env] as ConsulOptions);
@@ -17,7 +18,7 @@ const consulServer = new Consul(config.consul.server[env] as ConsulOptions);
 const prefix = `config/${config.consul.service.name}`;
 
 type ConsulResult = {
-	Value: string | number,
+  Value: string | number;
 };
 
 const getConsulValue = async (key: string) => {
@@ -31,13 +32,13 @@ export default async () => {
   log4js.configure(config.log4js as Configuration);
 
   // to disable caching of requests returning 304 instead of 200
-  app.disable('etag');
+  app.disable("etag");
 
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: "1mb" }));
 
   app.use((req, _, next) => {
     const dateReviver = (_: string, value: unknown) => {
-      if (value && typeof value === 'string') {
+      if (value && typeof value === "string") {
         const dateRegex = /^\d{2}-\d{2}-\d{4}$/;
         if (dateRegex.test(value)) {
           return new Date(value);
@@ -50,15 +51,20 @@ export default async () => {
     next();
   });
 
-  app.use('/', routers);
+  app.use("/", routers);
 
-  const port = await getConsulValue(`${env}/port`) as number;
-  const address = await getConsulValue(`${env}/address`) as string;
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const { status = 500, message = "Server error" } = err;
+    res.status(status).json({ message });
+  });
+
+  const port = (await getConsulValue(`${env}/port`)) as number;
+  const address = (await getConsulValue(`${env}/address`)) as string;
   app.listen(port, address, () => {
     log4js.getLogger().info(`Example app listening on port ${address}:${port}`);
   });
 
-  const mongoAddress = await getConsulValue(`${env}/mongo.address`) as string;
+  const mongoAddress = (await getConsulValue(`${env}/mongo.address`)) as string;
   await mongoose.connect(mongoAddress, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
