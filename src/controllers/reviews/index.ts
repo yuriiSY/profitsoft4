@@ -21,9 +21,10 @@ export const saveReview = async (
 
     if (!bookId) {
       log4js.getLogger().warn("Missing book_id in review data");
-      return res
-        .status(httpStatus.BAD_REQUEST)
-        .send({ message: "book_id is required" });
+      throw HttpError(
+        httpStatus.BAD_REQUEST,
+        "Missing required parameter: book_id"
+      );
     }
 
     const bookExists = await checkBookExist(bookId);
@@ -54,9 +55,10 @@ export const getReviesByBookId = async (
     const { book_id, size = "10", from = "0" } = req.query;
 
     if (!book_id) {
-      return res.status(httpStatus.BAD_REQUEST).send({
-        message: "Missing required parameter: bookId",
-      });
+      throw HttpError(
+        httpStatus.BAD_REQUEST,
+        "Missing required parameter: book_id"
+      );
     }
 
     const reviews = await listReviewsByBookId({
